@@ -3,11 +3,14 @@ Python Utilities
 
 Here are some python-scripts that do all kinds of things.
 
-- - -
-### setup.py
-Installs the dependencies. 
-Use `setup.py --help` for more info. The setup.py help is
-provided by setuptools.
+## Setup
+Install all dependencies with
+```commandline
+pip install -r requirements.txt
+```
+
+## Scripts
+
 ### riddle.py
 Downloads all images from one ore more given subreddits
 ```commandline
