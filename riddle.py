@@ -6,11 +6,12 @@ import os
 import zipfile
 import optparse
 import asyncio
+import shutil
 
 redditurl: str = 'https://old.reddit.com/r/%s'
 dl_dir: str = './.cache/'  # Format must be ./
 img_ext: List[str] = ['jpg', 'png', 'bmp']
-blacklist: List[str] = ['b.thumbs.redditmedia.com']
+blacklist: List[str] = ['b.thumbs.redditmedia.com', 'reddit.com']
 hdr: Dict[str, str] = {
     'User-Agent': """Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) 
                      Chrome/23.0.1271.64 Safari/537.11""",
@@ -59,7 +60,7 @@ async def get_next(url):
                 ids.append(fname)
             except KeyError:
                 pass
-    return [id for id in ids if id][-1]
+    return [_id for _id in ids if _id][-1]
 
 
 def has_source(tag):
@@ -90,7 +91,8 @@ async def download_async(url, zfile=None):
             if img.strip('http://').strip('https://').split('/')[0] in blacklist:
                 img = None
                 continue
-            name = dl_dir + img.split('/')[-1]
+            imgname = img.split('/')[-1]
+            name = dl_dir + imgname
             if os.path.isfile(name):
                 continue
             f = open(name, "wb")
@@ -98,7 +100,7 @@ async def download_async(url, zfile=None):
             image = urlreq.urlopen(req)
             f.write(image.read())
             f.close()
-            zfile.write(name, compress_type=zipfile.ZIP_DEFLATED)
+            zfile.write(name, imgname, zipfile.ZIP_DEFLATED)
             try:
                 os.remove(name)
             except FileNotFoundError or PermissionError:
@@ -106,7 +108,7 @@ async def download_async(url, zfile=None):
             print('[+] Saved Image %s from %s' % (img, url))
             await asyncio.sleep(0.25)
         except Exception as error:
-            print('[-] Failed with %s' % img)
+            print('[-] Failed with %s %s' % (img, error))
     print('[+] Finished %s' % url)
 
 
@@ -147,24 +149,30 @@ def main(sections, chaos=False):
     try:
         for sect in sections:
             if chaos:
-                loop.call_soon(loop.create_task(
+                loop.create_task(loop.create_task(
                     dl_loop(sect, zfiles[sect], loop, chaos=True)))
             else:
-                loop.call_soon(loop.create_task(
+                loop.run_until_complete(loop.create_task(
                     dl_loop(sect, zfiles[sect], loop)))
-        loop.run_forever()
+        if chaos:
+            loop.run_forever()
     except KeyboardInterrupt:
-        loop.stop()
         for sect in sections:
             try:
                 zfiles[sect].close()
             except Exception as error:
                 print(error)
+    finally:
+        shutil.rmtree(dl_dir)
 
 
 if __name__ == '__main__':
-    parser = optparse.OptionParser()
+    parser = optparse.OptionParser(usage="usage: %prog [options] [subreddits]")
     parser.add_option('-c', '--chaos', dest='chaos',
-                      action='store_true', default=False)
+                      action='store_true', default=False,
+                      help=""" Doesn't wait for previous downloads to finish and doesn't exit when no more
+                      images can be found. Do only activate this if you want to download a lot of images
+                      from multiple subreddits at the same time. Only option to exit is CTRL + C.""")
     options, sects = parser.parse_args()
+    print('[~] Recieved subreddits %s' % ', '.join(sects))
     main(sects, chaos=options.chaos)
