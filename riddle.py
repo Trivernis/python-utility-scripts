@@ -20,6 +20,16 @@ hdr: Dict[str, str] = {
     'Connection': 'keep-alive'}
 
 
+def print_progress(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
+    # Print New Line on Complete
+    if iteration == total:
+        print()
+
+
 async def request_soup(url):
     req = urlreq.Request(url, headers=hdr)
     html = None
@@ -75,10 +85,19 @@ def has_source(tag):
         return False
 
 
-async def download_async(url, zfile=None):
+async def download_async(url, zfile=None, test=False):
     images = await get_img_as(url)
     print('[+] Found %s images' % len(images))
+    logmsg = ""
+    imgcount = len(images)
+    savedcount = 0
+    count = 0
+    print_progress(count, imgcount, prefix="Downloading: ", suffix="Complete")
     for img in images:
+        print_progress(count+1, imgcount, prefix="Downloading: ", suffix="Complete")
+        count+=1
+        if test:
+            continue
         try:
             if 'http' not in img.split('/')[0] and '//' not in img.split('.')[0]:
                 img = url + img
@@ -101,29 +120,29 @@ async def download_async(url, zfile=None):
                 os.remove(name)
             except FileNotFoundError or PermissionError:
                 pass
-            print('[+] Saved Image %s from %s' % (img, url))
+            savedcount += 1
             await asyncio.sleep(0.25)
         except Exception as error:
-            print('[-] Failed with %s %s' % (img, error))
-    print('[+] Finished %s' % url)
+            logmsg += '[-] Failed with %s %s\n' % (img, error)
+    print('[+] %s images downloaded | %s finished %s' % (savedcount, logmsg, url))
 
 
-async def dl_loop(section, zfile, loop, chaos=False):
+async def dl_loop(section, zfile, loop, chaos=False, test=False):
     baseurl = redditurl % section
     url = baseurl
     if chaos:
-        loop.create_task(download_async(url, zfile))
+        loop.create_task(download_async(url, zfile, test))
     else:
-        await loop.create_task(download_async(url, zfile))
+        await loop.create_task(download_async(url, zfile, test))
     while True:
         print('[*] Getting Images from %s' % url)
         try:
             after = await get_next(url)
             url = '{}/?after={}'.format(baseurl, after)
             if chaos:
-                loop.create_task(download_async(url, zfile))
+                loop.create_task(download_async(url, zfile, test))
             else:
-                await loop.create_task(download_async(url, zfile))
+                await loop.create_task(download_async(url, zfile, test))
         except Exception as ex:
             print('[-]', ex)
             zfile.close()
@@ -132,7 +151,8 @@ async def dl_loop(section, zfile, loop, chaos=False):
             await asyncio.sleep(0.1)
 
 
-def main(sections, chaos=False):
+def main(sections, opts):
+    chaos = opts.chaos
     if not os.path.exists(dl_dir):
         os.makedirs(dl_dir)
     zfiles = {}
@@ -146,10 +166,10 @@ def main(sections, chaos=False):
         for sect in sections:
             if chaos:
                 loop.create_task(loop.create_task(
-                    dl_loop(sect, zfiles[sect], loop, chaos=True)))
+                    dl_loop(sect, zfiles[sect], loop, chaos=True, test=opts.test)))
             else:
                 loop.run_until_complete(loop.create_task(
-                    dl_loop(sect, zfiles[sect], loop)))
+                    dl_loop(sect, zfiles[sect], loop, test=opts.test)))
         if chaos:
             loop.run_forever()
     except KeyboardInterrupt:
@@ -169,6 +189,9 @@ if __name__ == '__main__':
                       help=""" Doesn't wait for previous downloads to finish and doesn't exit when no more
                       images can be found. Do only activate this if you want to download a lot of images
                       from multiple subreddits at the same time. Only option to exit is CTRL + C.""")
+    parser.add_option('-t', '--test', dest='test',
+                      action='store_true', default=False,
+                      help='Tests the functions of the script')
     options, sects = parser.parse_args()
     print('[~] Recieved subreddits %s' % ', '.join(sects))
-    main(sects, chaos=options.chaos)
+    main(sects, opts=options)
