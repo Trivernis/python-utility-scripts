@@ -20,7 +20,7 @@ hdr: Dict[str, str] = {
     'Connection': 'keep-alive'}
 
 
-async def get_img_as(url):
+async def request_soup(url):
     req = urlreq.Request(url, headers=hdr)
     html = None
     for x in range(0, 10):
@@ -31,6 +31,11 @@ async def get_img_as(url):
             print('[-]', e)
             await asyncio.sleep(1)
     soup = BeautifulSoup(html, "lxml")
+    return soup
+
+
+async def get_img_as(url):
+    soup = await  request_soup(url)
     ret = []
     for t in soup.find_all(has_source):
         if 'redditmedia' not in t['src']:
@@ -42,17 +47,8 @@ async def get_img_as(url):
 
 
 async def get_next(url):
-    req = urlreq.Request(url, headers=hdr)
-    html = None
-    for x in range(0, 10):
-        try:
-            html = urlreq.urlopen(req).read()
-            break
-        except Exception as e:
-            print('[-]', e)
-            await asyncio.sleep(1)
-    soup = BeautifulSoup(html, "lxml")
     ids = []
+    soup = await request_soup(url)
     for t in soup.find_all(has_source):
         if 'redditmedia' not in t['src']:
             try:
