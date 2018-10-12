@@ -8,11 +8,11 @@ import optparse
 import asyncio
 import shutil
 
-redditurl: str = 'https://old.reddit.com/r/%s'
-dl_dir: str = './.cache/'  # Format must be ./
-img_ext: List[str] = ['jpg', 'png', 'bmp']
-blacklist: List[str] = ['b.thumbs.redditmedia.com', 'reddit.com']
-hdr: Dict[str, str] = {
+redditurl: str = 'https://old.reddit.com/r/%s'      # the url for reddit with %s to insert the subreddit name
+dl_dir: str = './.cache/'  # Format must be ./      # the directory where files are cached. Will be created if it doesn't exist
+img_ext: List[str] = ['jpg', 'png', 'bmp']          # file extensions that are images
+blacklist: List[str] = ['b.thumbs.redditmedia.com', 'reddit.com']   # where images shouldn't be downloaded from
+hdr: Dict[str, str] = {                             # request header
     'User-Agent': """Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) 
                      Chrome/23.0.1271.64 Safari/537.11""",
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -20,6 +20,7 @@ hdr: Dict[str, str] = {
     'Connection': 'keep-alive'}
 
 
+# prints a progress bar
 def print_progress(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
@@ -30,6 +31,7 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, length=10
         print()
 
 
+# returns a soup for the given url
 async def request_soup(url):
     req = urlreq.Request(url, headers=hdr)
     html = None
@@ -44,6 +46,7 @@ async def request_soup(url):
     return soup
 
 
+# returns all images for the given url
 async def get_img_as(url):
     soup = await  request_soup(url)
     ret = []
@@ -56,6 +59,7 @@ async def get_img_as(url):
     return ret
 
 
+# returns the last post id in the given reddit page
 async def get_next(url):
     ids = []
     soup = await request_soup(url)
@@ -69,6 +73,7 @@ async def get_next(url):
     return [_id for _id in ids if _id][-1]
 
 
+# returns if the given tag has a source attribute that is an image
 def has_source(tag):
     if tag.has_attr('src'):
         try:
@@ -85,6 +90,7 @@ def has_source(tag):
         return False
 
 
+# downloads all images for the given url and puts them in a zipfile
 async def download_async(url, zfile=None, test=False):
     images = await get_img_as(url)
     print('[+] Found %s images' % len(images))
@@ -127,6 +133,7 @@ async def download_async(url, zfile=None, test=False):
     print('[+] %s images downloaded | %s finished %s' % (savedcount, logmsg, url))
 
 
+# loops over reddit-pages until no more images are found
 async def dl_loop(section, zfile, loop, chaos=False, test=False):
     baseurl = redditurl % section
     url = baseurl
@@ -151,6 +158,7 @@ async def dl_loop(section, zfile, loop, chaos=False, test=False):
             await asyncio.sleep(0.1)
 
 
+# the main function
 def main(sections, opts):
     chaos = opts.chaos
     if not os.path.exists(dl_dir):
