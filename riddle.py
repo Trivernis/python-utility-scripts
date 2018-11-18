@@ -101,7 +101,7 @@ async def download_async(url, zfile=None, test=False):
     print_progress(count, imgcount, prefix="Downloading: ", suffix="Complete")
     for img in images:
         print_progress(count+1, imgcount, prefix="Downloading: ", suffix="Complete")
-        count+=1
+        count += 1
         if test:
             continue
         try:
