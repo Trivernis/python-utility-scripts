@@ -183,6 +183,7 @@ def download_images(imgs, zfile):
         time.sleep(0.1)  # no don't penetrate
         count += 1
     added = len(zfile.infolist()) - len(fnames)
+    print()
     print('[+] Added %s files to the zipfile' % added)
 
 
