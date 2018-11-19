@@ -1,10 +1,13 @@
+# encoding=utf-8
 import urllib.request as urlreq
-
 from bs4 import BeautifulSoup
+
 import zipfile
 import time
 import os
 import sys
+import optparse
+import shutil
 
 blacklist = ['b.thumbs.redditmedia.com', 'reddit.com']
 dl_dir = './.cache/'
@@ -15,6 +18,7 @@ hdr = {                             # request header
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8',
     'Connection': 'keep-alive'}
+errors = {}
 
 
 def print_progress(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
@@ -46,8 +50,11 @@ def get_soup4url(url):
             html = urlreq.urlopen(req).read()
             break
         except Exception as e:
-            print('[-]', e)
-    if  html:
+            if errors[e]:
+                errors[e] += 1
+            else:
+                errors[e] = 1
+    if html:
         soup = BeautifulSoup(html, "lxml")
         return soup
     return False
@@ -98,7 +105,7 @@ def get_img4site(url):
     sys.stdout.flush()
     for t in soup.find_all(has_source):
         try:
-            if 'redditmedia' not in t['src']:
+            if 'redditmedia' not in t['src'] and 'icon' not in t['src']:
                 img = t['src']
                 if 'http' not in img.split('/')[0] and '//' not in img.split('.')[0]:
                     img = url + img
@@ -118,37 +125,52 @@ def get_img4sub(url, length=-1):
     imgs = []
     print('[ ] 1/2 Getting images...')
     if length >= 0:
-        for x in range(length):
+        x = 0
+        while x < length:
             time.sleep(0.1)  # we don't want to flood with requests
-            imgs.extend(get_img4site(url))
+            imgurls = get_img4site(url)
+            if not imgurls:
+                break
+            imgs.extend(imgurls)
+            x = len(imgs)
             url = get_next_url(baseurl, url)
             if not url:
                 break
             sys.stdout.write('\b')
+        imgs = imgs[:length]
     else:
         while url:
             time.sleep(0.1)  # we don't want to flood with requests
-            imgs.extend(get_img4site(url))
+            imgurls = get_img4site(url)
+            if not imgurls:
+                break
+            imgs.extend(imgurls)
             url = get_next_url(baseurl, url)
+    print('[+] Found %s images' % len(imgs))
     return imgs
 
 
 def download_images(imgs, zfile):
-    count = 0
+    count = 1
     imgcount = len(imgs)
+    fnames = [zinfo.filename for zinfo in zfile.infolist()]
     print('[ ] Downloading %s images' % imgcount)
     if not os.path.isdir(dl_dir):
         os.mkdir(dl_dir)
-    print_progress(count, imgcount, prefix="2/2 Downloading: ", suffix="Complete")
     for img in imgs:
-        print_progress(count+1, imgcount, prefix="2/2 Downloading: ", suffix="Complete")
+        print_progress(count, imgcount, prefix="2/2 Downloading: ", suffix="Complete")
         imgname = img.split('/')[-1]
         name = dl_dir + imgname
-        if os.path.isfile(name):
+        if os.path.isfile(name) or imgname in fnames:
+            count += 1
             continue
         f = open(name, "wb")
         req = urlreq.Request(img, headers=hdr)
-        image = urlreq.urlopen(req)
+        try:
+            image = urlreq.urlopen(req)
+        except ConnectionError:
+            print('\n [-] Connection Error')
+            return
         f.write(image.read())
         f.close()
         zfile.write(name, imgname, zipfile.ZIP_DEFLATED)
@@ -158,18 +180,53 @@ def download_images(imgs, zfile):
             pass
         time.sleep(0.1)  # no don't penetrate
         count += 1
+    added = len(zfile.infolist()) - len(fnames)
+    print('[+] Added %s files to the zipfile' % added)
 
 
-def download_subreddit(sub):
+def download_subreddit(sub, count=-1):
     mode = 'w'
     if os.path.isfile(sub + '.zip'):
         mode = 'a'
     url = 'https://old.reddit.com/r/%s/' % sub
-    imgs = get_img4sub(url)
+    imgs = get_img4sub(url, length=count)
     zfile = zipfile.ZipFile('%s.zip' % sub, mode)
     download_images(imgs, zfile)
     zfile.close()
 
 
+def cleanup():
+    print('[ ] Cleanup...')
+    if os.path.isdir(dl_dir):
+        shutil.rmtree(dl_dir)
+
+
+def parser_init():
+    parser = optparse.OptionParser(usage="usage: %prog [options] [subreddits]")
+    parser.add_option('-c', '--count', dest='count',
+                      type='int', default=-1,
+                      help='The number of images to download.')
+    parser.add_option('-t', '--test', dest='test',
+                      action='store_true', default=False,
+                      help='Tests the functions of the script')
+    return parser.parse_args()
+
+
+def main():
+    options, subreddits = parser_init()
+    if options.count:
+        count = options.count
+    else:
+        count = -1
+    if options.test:
+        count = 1
+        subreddits = ['python']
+    for sub in subreddits:
+        print('[ ] Downloading %s' % sub)
+        download_subreddit(sub, count=count)
+    cleanup()
+    print(errors)
+
+
 if __name__ == '__main__':
-    download_subreddit('Animewallpaper')
+    main()
