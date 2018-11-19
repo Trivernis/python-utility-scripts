@@ -21,11 +21,12 @@ hdr = {                             # request header
 errors = {}
 
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
+def print_progress(iteration, total, prefix='', suffix='', decimals=1, length=50, fill='█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
     bar = fill * filled_length + '-' * (length - filled_length)
     print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
+    sys.stdout.flush()
     # Print New Line on Complete
     if iteration == total:
         print()
@@ -185,13 +186,16 @@ def download_images(imgs, zfile):
     print('[+] Added %s files to the zipfile' % added)
 
 
-def download_subreddit(sub, count=-1):
+def download_subreddit(sub, count=-1, out=None):
     mode = 'w'
-    if os.path.isfile(sub + '.zip'):
+    zname = sub + '.zip'
+    if out:
+        zname = out
+    if os.path.isfile(zname):
         mode = 'a'
     url = 'https://old.reddit.com/r/%s/' % sub
     imgs = get_img4sub(url, length=count)
-    zfile = zipfile.ZipFile('%s.zip' % sub, mode)
+    zfile = zipfile.ZipFile(zname, mode)
     download_images(imgs, zfile)
     zfile.close()
 
@@ -207,6 +211,9 @@ def parser_init():
     parser.add_option('-c', '--count', dest='count',
                       type='int', default=-1,
                       help='The number of images to download.')
+    parser.add_option('-o', '--output', dest='output',
+                      type='str', default=None,
+                      help='The name of the output zipfile. If none is specified, it\'s the subreddits name.')
     parser.add_option('-t', '--test', dest='test',
                       action='store_true', default=False,
                       help='Tests the functions of the script')
@@ -215,18 +222,20 @@ def parser_init():
 
 def main():
     options, subreddits = parser_init()
-    if options.count:
-        count = options.count
-    else:
-        count = -1
+    count = options.count
+    output = options.output
     if options.test:
         count = 1
         subreddits = ['python']
+        output = 'test.zip'
     for sub in subreddits:
         print('[~] Downloading %s' % sub)
-        download_subreddit(sub, count=count)
+        download_subreddit(sub, count=count, out=output)
     cleanup()
-    print(errors)
+    if options.test:
+        os.remove(output)
+    if len(errors.keys()) > 0:
+        print(errors)
 
 
 if __name__ == '__main__':
