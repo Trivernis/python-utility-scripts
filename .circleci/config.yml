@@ -54,7 +54,7 @@ jobs:
           name: run tests for riddle2.py
           command: |
             . venv/bin/activate
-            python riddle2.py
+            python riddle2.py -t
 
       - store_artifacts:
           path: test-reports
