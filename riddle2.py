@@ -54,6 +54,7 @@ def get_soup4url(url):
                 errors[e] += 1
             else:
                 errors[e] = 1
+            time.sleep(1)  # to avoid request flooding
     if html:
         soup = BeautifulSoup(html, "lxml")
         return soup
@@ -123,7 +124,7 @@ def get_img4site(url):
 def get_img4sub(url, length=-1):
     baseurl = url
     imgs = []
-    print('[ ] 1/2 Getting images...')
+    print('[~] 1/2 Getting images...')
     if length >= 0:
         x = 0
         while x < length:
@@ -154,7 +155,7 @@ def download_images(imgs, zfile):
     count = 1
     imgcount = len(imgs)
     fnames = [zinfo.filename for zinfo in zfile.infolist()]
-    print('[ ] Downloading %s images' % imgcount)
+    print('[~] Downloading %s images' % imgcount)
     if not os.path.isdir(dl_dir):
         os.mkdir(dl_dir)
     for img in imgs:
@@ -196,7 +197,7 @@ def download_subreddit(sub, count=-1):
 
 
 def cleanup():
-    print('[ ] Cleanup...')
+    print('[~] Cleanup...')
     if os.path.isdir(dl_dir):
         shutil.rmtree(dl_dir)
 
@@ -222,7 +223,7 @@ def main():
         count = 1
         subreddits = ['python']
     for sub in subreddits:
-        print('[ ] Downloading %s' % sub)
+        print('[~] Downloading %s' % sub)
         download_subreddit(sub, count=count)
     cleanup()
     print(errors)
