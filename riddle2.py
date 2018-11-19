@@ -148,6 +148,7 @@ def get_img4sub(url, length=-1):
                 break
             imgs.extend(imgurls)
             url = get_next_url(baseurl, url)
+    print()
     print('[+] Found %s images' % len(imgs))
     return imgs
 
@@ -183,7 +184,6 @@ def download_images(imgs, zfile):
         time.sleep(0.1)  # no don't penetrate
         count += 1
     added = len(zfile.infolist()) - len(fnames)
-    print()
     print('[+] Added %s files to the zipfile' % added)
 
 
