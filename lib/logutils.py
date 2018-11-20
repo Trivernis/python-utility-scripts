@@ -5,8 +5,9 @@ from lib import fsutils
 
 
 def get_logger(name=None):
-    fsutils.dir_exist_guarantee('logs')
-    fileConfig('./conf/logging.config')
+    if fsutils.os.path.isfile('./conf/logging.config'):
+        fsutils.dir_exist_guarantee('logs')
+        fileConfig('./conf/logging.config')
     if name:
         return logging.getLogger(name)
     else:

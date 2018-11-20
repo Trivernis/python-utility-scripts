@@ -49,7 +49,7 @@ def get_next_url(baseurl: str, url: str):
                 pass
     ids = [_id for _id in ids if _id]
     if len(ids) == 0:  # if no id was found, we can't get any further into the past
-        return False
+        return None
     _id = ids[-1]
     next_url = '{}/?after={}'.format(baseurl, _id)
     return next_url
@@ -189,6 +189,7 @@ def main():
     if options.loop:
         while True:
             download_subreddits(subreddits, count, output)
+            print('[~] Next Download in 5 minues...')
             time.sleep(300)
     else:
         download_subreddits(subreddits, count, output)
