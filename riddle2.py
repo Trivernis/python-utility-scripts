@@ -48,8 +48,8 @@ def get_next_url(baseurl: str, url: str):
             except KeyError:
                 pass
     ids = [_id for _id in ids if _id]
-    if len(ids) == 0:
-        return []
+    if len(ids) == 0:  # if no id was found, we can't get any further into the past
+        return False
     _id = ids[-1]
     next_url = '{}/?after={}'.format(baseurl, _id)
     return next_url
@@ -164,7 +164,18 @@ def parser_init():
     parser.add_option('-t', '--test', dest='test',
                       action='store_true', default=False,
                       help='Tests the functions of the script')
+    parser.add_option('-l', '--loop', dest='loop',
+                      action='store_true', default=False,
+                      help="""Continuing download loop. When this option is set every 5 Minutes the program searches for
+                      new images""")
     return parser.parse_args()
+
+
+def download_subreddits(subreddits, count, output):
+    for sub in subreddits:
+        print('[~] Downloading %s' % sub)
+        download_subreddit(sub, count=count, out=output)
+        print()
 
 
 def main():
@@ -175,14 +186,19 @@ def main():
         count = 1
         subreddits = ['python']
         output = 'test.zip'
-    for sub in subreddits:
-        print('[~] Downloading %s' % sub)
-        download_subreddit(sub, count=count, out=output)
+    if options.loop:
+        while True:
+            download_subreddits(subreddits, count, output)
+            time.sleep(300)
+    else:
+        download_subreddits(subreddits, count, output)
     cleanup()
     if options.test:
         os.remove(output)
     if len(errors.keys()) > 0:
-        print(errors)
+        print('[-] Following errors occured:')
+        for key in errors.keys():
+            print('    %s times: %s' % (errors[key], key))
 
 
 if __name__ == '__main__':
