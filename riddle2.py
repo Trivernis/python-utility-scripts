@@ -1,13 +1,11 @@
-# encoding=utf-8
-import urllib.request as urlreq
-from bs4 import BeautifulSoup
-
 import zipfile
 import time
 import os
 import sys
 import optparse
 import shutil
+
+from lib import cutils, netutils, fsutils
 
 blacklist = ['b.thumbs.redditmedia.com', 'reddit.com']
 dl_dir = './.cache/'
@@ -21,66 +19,25 @@ hdr = {                             # request header
 errors = {}
 
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=1, length=50, fill='█'):
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filled_length = int(length * iteration // total)
-    bar = fill * filled_length + '-' * (length - filled_length)
-    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
-    sys.stdout.flush()
-    # Print New Line on Complete
-    if iteration == total:
-        print()
-
-
-def spinning_cursor():
-    while True:
-        for cursor in '|/-\\':
-            yield cursor
-
-
-def get_extension(fstring):
-    return fstring.split('.')[-1].lower()
-
-
-def get_soup4url(url):
-    """ Returns a soup for the url with 10 retrys """
-    req = urlreq.Request(url, headers=hdr)
-    html = None
-    for x in range(0, 10):
-        try:
-            html = urlreq.urlopen(req).read()
-            break
-        except Exception as e:
-            if errors[e]:
-                errors[e] += 1
-            else:
-                errors[e] = 1
-            time.sleep(1)  # to avoid request flooding
-    if html:
-        soup = BeautifulSoup(html, "lxml")
-        return soup
-    return False
-
-
-def has_source(tag):
+def has_source(tag: netutils.BeautifulSoup) -> bool:
     if tag.has_attr('src'):
         try:
-            return get_extension(tag['src']) in img_ext
+            return fsutils.get_extension(tag['src']) in img_ext
         except IndexError or KeyError:
             return False
     elif tag.has_attr('data-url'):
         try:
             tag['src'] = tag['data-url']
-            return get_extension(tag['src']) in img_ext
+            return fsutils.get_extension(tag['src']) in img_ext
         except IndexError or KeyError:
             return False
     else:
         return False
 
 
-def get_next_url(baseurl, url):
+def get_next_url(baseurl: str, url: str):
     ids = []
-    soup = get_soup4url(url)
+    soup = netutils.get_soup4url(url, headers=hdr)
     if not soup:
         return False
     for t in soup.find_all(has_source):
@@ -92,16 +49,16 @@ def get_next_url(baseurl, url):
                 pass
     ids = [_id for _id in ids if _id]
     if len(ids) == 0:
-        return False
+        return []
     _id = ids[-1]
     next_url = '{}/?after={}'.format(baseurl, _id)
     return next_url
 
 
-def get_img4site(url):
-    soup = get_soup4url(url)
+def get_img4site(url: str) -> list:
+    soup = netutils.get_soup4url(url, headers=hdr)
     if not soup:
-        return False
+        return []
     ret = []
     sys.stdout.write('.')
     sys.stdout.flush()
@@ -122,7 +79,7 @@ def get_img4site(url):
     return ret
 
 
-def get_img4sub(url, length=-1):
+def get_img4sub(url: str, length: int =-1) -> list:
     baseurl = url
     imgs = []
     print('[~] 1/2 Getting images...')
@@ -153,41 +110,30 @@ def get_img4sub(url, length=-1):
     return imgs
 
 
-def download_images(imgs, zfile):
-    count = 1
+def download_images(imgs: list, zfile: zipfile.ZipFile):
     imgcount = len(imgs)
     fnames = [zinfo.filename for zinfo in zfile.infolist()]
     print('[~] Downloading %s images' % imgcount)
-    if not os.path.isdir(dl_dir):
-        os.mkdir(dl_dir)
+    pb = cutils.ProgressBar(total=imgcount, prefix="[~] 2/2 Downloadinng", suffix="Complete")
+    fsutils.dir_exist_guarantee(dl_dir)
     for img in imgs:
-        print_progress(count, imgcount, prefix="2/2 Downloading: ", suffix="Complete")
+        pb.tick()
         imgname = img.split('/')[-1]
-        name = dl_dir + imgname
+        name = os.path.join(dl_dir, imgname)
         if os.path.isfile(name) or imgname in fnames:
-            count += 1
             continue
-        f = open(name, "wb")
-        req = urlreq.Request(img, headers=hdr)
-        try:
-            image = urlreq.urlopen(req)
-        except ConnectionError:
-            print('\n [-] Connection Error')
-            return
-        f.write(image.read())
-        f.close()
+        netutils.download_file(img, name, headers=hdr)
         zfile.write(name, imgname, zipfile.ZIP_DEFLATED)
         try:
             os.remove(name)
         except FileNotFoundError or PermissionError:
             pass
         time.sleep(0.1)  # no don't penetrate
-        count += 1
     added = len(zfile.infolist()) - len(fnames)
     print('[+] Added %s files to the zipfile' % added)
 
 
-def download_subreddit(sub, count=-1, out=None):
+def download_subreddit(sub: str, count: int =-1, out: str =None):
     mode = 'w'
     zname = sub + '.zip'
     if out:
