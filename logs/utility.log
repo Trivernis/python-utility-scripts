@@ -1,0 +1,61 @@
+2018-11-20 11:15:43,247 netutils     ERROR    <urlopen error _ssl.c:830: The handshake operation timed out>
+Traceback (most recent call last):
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\urllib\request.py", line 1318, in do_open
+    encode_chunked=req.has_header('Transfer-encoding'))
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 1239, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 1285, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 1234, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 1026, in _send_output
+    self.send(msg)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 964, in send
+    self.connect()
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 1400, in connect
+    server_hostname=server_hostname)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\ssl.py", line 407, in wrap_socket
+    _context=self, _session=session)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\ssl.py", line 817, in __init__
+    self.do_handshake()
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\ssl.py", line 1077, in do_handshake
+    self._sslobj.do_handshake()
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\ssl.py", line 689, in do_handshake
+    self._sslobj.do_handshake()
+socket.timeout: _ssl.c:830: The handshake operation timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\dev\Documents\Projekte\python-utility-scripts\lib\netutils.py", line 15, in get_soup4url
+    html = urlreq.urlopen(req, timeout=timeout).read()
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\urllib\request.py", line 223, in urlopen
+    return opener.open(url, data, timeout)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\urllib\request.py", line 526, in open
+    response = self._open(req, data)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\urllib\request.py", line 544, in _open
+    '_open', req)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\urllib\request.py", line 504, in _call_chain
+    result = func(*args)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\urllib\request.py", line 1361, in https_open
+    context=self._context, check_hostname=self._check_hostname)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\urllib\request.py", line 1320, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error _ssl.c:830: The handshake operation timed out>
+2018-11-20 14:11:39,064 netutils     ERROR    The read operation timed out
+Traceback (most recent call last):
+  File "C:\Users\dev\Documents\Projekte\python-utility-scripts\lib\netutils.py", line 15, in get_soup4url
+    html = urlreq.urlopen(req, timeout=timeout).read()
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 462, in read
+    s = self._safe_read(self.length)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\http\client.py", line 612, in _safe_read
+    chunk = self.fp.read(min(amt, MAXAMOUNT))
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\socket.py", line 586, in readinto
+    return self._sock.recv_into(b)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\ssl.py", line 1012, in recv_into
+    return self.read(nbytes, buffer)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\ssl.py", line 874, in read
+    return self._sslobj.read(len, buffer)
+  File "C:\ProgramData\Anaconda3\envs\python-utility-scripts\lib\ssl.py", line 631, in read
+    v = self._sslobj.read(len, buffer)
+socket.timeout: The read operation timed out

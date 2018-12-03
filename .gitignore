@@ -1,3 +1,7 @@
 *.zip
+*.log
+logs
 .idea
 .cache
+__pycache__.*
+__pycache__
