@@ -113,7 +113,7 @@ def get_img4sub(url: str, length: int =-1) -> list:
 def download_images(imgs: list, zfile: zipfile.ZipFile):
     imgcount = len(imgs)
     fnames = [zinfo.filename for zinfo in zfile.infolist()]
-    print('[~] Downloading %s images' % imgcount)
+    print('[~] 2/2 Downloading %s images' % imgcount)
     pb = cutils.ProgressBar(total=imgcount, prefix="[~] 2/2 Downloadinng", suffix="Complete")
     fsutils.dir_exist_guarantee(dl_dir)
     for img in imgs:
