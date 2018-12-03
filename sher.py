@@ -51,7 +51,6 @@ def main():
         for engine in engines:
             for res in engine.search(query):
                 print(res)
-            print('- - - - -')
         if not options.loop:
             break
 
