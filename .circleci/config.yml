@@ -56,6 +56,8 @@ jobs:
             . venv/bin/activate
             python riddle2.py -t
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
+      - run:
+          name: run tests for sher.py
+          command: |
+            . venv/bin/activate
+            python sher.py -d . -q "."

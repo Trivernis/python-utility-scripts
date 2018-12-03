@@ -43,3 +43,21 @@ Options:
                         every 5 Minutes the program searches for
                         new images
 ```
+
+## sher.py
+Searches for string occurences in a file (line by line) or directory
+(all directory and filenames in the tree).
+
+```commandline
+Usage: sher.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -f S_FILE, --file=S_FILE
+                        Searching lines in the given file.
+  -d S_DIR, --directory=S_DIR
+                        Searching files in a directory.
+  -q QUERY, --query=QUERY
+                        The search term. Supporting "".
+  -l, --loop            Runs the program in an endless loop.
+ ```
