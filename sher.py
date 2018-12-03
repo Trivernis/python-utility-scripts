@@ -9,9 +9,10 @@ sources = {}
 def optparse_init() -> tuple:
     parser = optparse.OptionParser()
     parser.add_option('-f', '--file', type='string', dest='s_file', help='Searching lines in the given file.')
-    parser.add_option('-d', '--directory', type='string', dest='s_dir', help='Searching files in a directorys.')
-    parser.add_option('-q', '--query', type='string', dest='query', help='The search term.')
-    parser.add_option('-l', '--loop', action='store_true', default=False, dest='loop', help='Looping over the input?')
+    parser.add_option('-d', '--directory', type='string', dest='s_dir', help='Searching files in a directory.')
+    parser.add_option('-q', '--query', type='string', dest='query', help='The search term. Supporting "".')
+    parser.add_option('-l', '--loop', action='store_true', default=False, dest='loop', help="""Runs the program in
+    an endless loop.""")
     return parser.parse_args()
 
 
