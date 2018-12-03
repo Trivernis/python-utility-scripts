@@ -10,5 +10,4 @@ def get_logger(name=None):
         fileConfig('./conf/logging.config')
     if name:
         return logging.getLogger(name)
-    else:
-        return logging.getLogger()
+    return logging.getLogger()
